@@ -13,7 +13,8 @@ class ModelConfig(object):
         self.typedic_path = self.root_dir + '/type_dic.json'
         self.dataset_path = "/home/fly/下载/py150/python100k_train.json"
         self.num_examples = 1 #for test
-
+        self.embedding_dims = {"type": 300, "value": 1000}
+        self.vocab_size = {'type': 330, 'value': 500}
 
 
 config = ModelConfig()
