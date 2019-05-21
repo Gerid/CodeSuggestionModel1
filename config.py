@@ -16,5 +16,4 @@ class ModelConfig(object):
 
 
 
-
 config = ModelConfig()
