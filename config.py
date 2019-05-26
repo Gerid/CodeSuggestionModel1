@@ -15,6 +15,6 @@ class ModelConfig(object):
         self.num_examples = 1 #for test
         self.embedding_dims = {"type": 300, "value": 1000}
         self.vocab_size = {'type': 330, 'value': 500}
-
+        self.units = 256
 
 config = ModelConfig()
