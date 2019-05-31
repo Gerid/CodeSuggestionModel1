@@ -3,7 +3,7 @@ import tensorflow as tf
 import json
 
 
-dataset_path = "/home/fly/下载/py150/python100k_train.json"
+dataset_path = config.dataset_path
 valuedic_path = config.valuedic_path
 typedic_path = config.typedic_path
 
@@ -42,8 +42,8 @@ with open(dataset_path, "r", encoding="utf-8") as f:
             del f
             break
 
-
-
+inp_data = [type_data[:-1], value_data[:-1]]
+targ_data = [type_data[1:], value_data[1:]]
 
 
 

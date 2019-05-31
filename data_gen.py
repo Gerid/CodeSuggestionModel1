@@ -4,6 +4,7 @@ from config import config
 import sys
 import numpy as np
 
+tf.enable_eager_execution()
 
 def create_dataset(path, num_examples):
     value_data = []
@@ -71,10 +72,12 @@ def load_dataset(path=config.dataset_path, num_examples=config.num_examples):
     return type_tensor, type_tokenizer, value_tensor, value_tokenizer, token
 
 
-type_tensor, type_tokenizer, value_tensor, value_tokenizer, token = load_dataset()
-
-tf.keras.layers.Embedding()
-
-
-
-sys.exit(0)
+#type_tensor, type_tokenizer, value_tensor, value_tokenizer, token = load_dataset()
+#
+#BATCH_SIZE = 20
+#
+#dataset = tf.data.Dataset.from_tensor_slices((type_tensor[:, :-1], value_tensor[:, :-1], type_tensor[:, 1:],
+#                                              value_tensor[:, 1:]))
+#dataset = dataset.batch(BATCH_SIZE, drop_remainder=True)
+#example_input_batch, _, example_target_batch, _ = next(iter(dataset))
+#print(example_input_batch, example_target_batch)

@@ -1,9 +1,4 @@
 import json
-import io
-import ijson
-import pandas as pd
-from collections import Counter
-import operator
 import tensorflow as tf
 import sys
 from config import config
@@ -11,7 +6,7 @@ from config import config
 tokenizer = tf.keras.preprocessing.text.Tokenizer(num_words=1000)
 
 
-dataset_path = "/home/fly/下载/py150/python100k_train.json"
+dataset_path = config.dataset_path
 
 value_data = []
 max_line = 5 #max lines processed in the dataset

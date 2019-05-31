@@ -1,7 +1,8 @@
 import tensorflow as tf
 from config import config
 import numpy as np
-
+import time
+from data_gen import *
 
 class Attention(tf.keras.Model):
     def __init__(self, units):
@@ -32,9 +33,10 @@ class AttentionLSTM(tf.keras.Model):
                                          return_sequences=True,
                                          return_state=True,
                                          recurrent_initializer='glorot_uniform')
-        self.flag = tf.Variable(dtype=bool, name="start_flag")
+        #self.flag = tf.Variable(dtype=bool, name="start_flag")
         self.attention = Attention(self.num_units)
-        self.fc = tf.keras.layers.Dense(config.vocab_size['value']+config.vocab_size['type'])
+        self.fct = tf.keras.layers.Dense(config.vocab_size['type'])
+        self.fcv = tf.keras.layers.Dense(config.vocab_size['value'])
 
     def call(self, inputs, hidden):
         type_vec = self.type_emb(inputs[0])
@@ -42,8 +44,12 @@ class AttentionLSTM(tf.keras.Model):
         inputs_vec = tf.concat([type_vec, value_vec], axis=2)
         output, state = self.lstm(inputs_vec, initial_state=hidden)
         context_vector, attention_weights = self.attention(output, state)
-        output = self.fc(context_vector)
-        return output, state
+        op_type = self.fct(context_vector)
+        op_vec = self.fcv(context_vector)
+        return [op_type, op_vec], state
+
+    def initialize_hidden_state(self):
+        return tf.zeros((self.num_units, self.num_units))
 
 
 optimizer = tf.keras.optimizers.Adam()
@@ -61,16 +67,74 @@ def loss_function(real, pred):
     return tf.reduce_mean(loss_)
 
 
-lstm = AttentionLSTM(config.vocab_size, config.embedding_dims, config.units, config.batch_size)
+type_tensor, type_tokenizer, value_tensor, value_tokenizer, token = load_dataset()
+
+vocab_size = {'type': len(type_tokenizer.word_index)+1, 'value': len(value_tokenizer.word_index)+1}
+
+BATCH_SIZE = 20
+
+dataset = tf.data.Dataset.from_tensor_slices((type_tensor[:, :-1], value_tensor[:, :-1], type_tensor[:, 1:],
+                                              value_tensor[:, 1:]))
+dataset = dataset.batch(BATCH_SIZE, drop_remainder=True)
+example_input_batch, _, example_target_batch, _ = next(iter(dataset))
+
+lstm = AttentionLSTM(vocab_size, config.embedding_dims, config.units, config.batch_size)
 
 
-@tf.function
 def train_step(inp, targ, hidden):
     loss = 0
 
     with tf.GradientTape() as tape:
-        output, hidden = lstm(inp, hidden)
-        input =
+
+        for t in range(1, len(targ[0])):
+            output, hidden = lstm(inp, hidden)
+
+            loss += loss_function(targ[:, t], output)
+
+            inp = tf.expand_dims(targ[:, t], 1)
+
+        batch_loss = (loss / int(targ.shape[1]))
+
+        variables = lstm.trainable_variables
+
+        gradients = tape.gradient(loss, variables)
+
+        optimizer.apply_gradients(zip(gradients, variables))
+
+        return batch_loss
+
+
+#print(example_input_batch, example_target_batch)
+
+steps_per_epoch = config.num_steps
+
+
+EPOCHS = 10
+
+for epoch in range(EPOCHS):
+    start = time.time()
+
+    hidden = lstm.initialize_hidden_state()
+    total_loss = 0
+
+    for (batch, (inp_type, inp_value, targ_type, targ_value)) in enumerate(dataset.take(steps_per_epoch)):
+        inp = [inp_type, inp_value]
+        targ = [targ_type, targ_value]
+        batch_loss = train_step(inp, targ, hidden)
+        total_loss += batch_loss
+
+        if batch % 100 == 0:
+            print('Epoch {} Batch {} Loss {:.4f}'.format(epoch + 1,
+                                                         batch,
+                                                         batch_loss.numpy()))
+    # saving (checkpoint) the model every 2 epochs
+    #if (epoch + 1) % 2 == 0:
+    #  checkpoint.save(file_prefix = checkpoint_prefix)
+
+    print('Epoch {} Loss {:.4f}'.format(epoch + 1,
+                                        total_loss / steps_per_epoch))
+    print('Time taken for 1 epoch {} sec\n'.format(time.time() - start))
+
 
 
 
