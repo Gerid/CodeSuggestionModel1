@@ -1,5 +1,6 @@
 import string
 import os
+import tensorflow as tf
 
 class ModelConfig(object):
     def __init__(self):
@@ -16,5 +17,6 @@ class ModelConfig(object):
         self.embedding_dims = {"type": 300, "value": 1000}
         self.vocab_size = {'type': 330, 'value': 500}
         self.units = 256
+
 
 config = ModelConfig()
