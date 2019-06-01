@@ -48,8 +48,7 @@ class AttentionLSTM(tf.keras.Model):
         op_vec = self.fcv(context_vector)
         return [op_type, op_vec], state
 
-    def initialize_hidden_state(self):
-        return tf.zeros((self.num_units, self.num_units))
+
 
 
 optimizer = tf.keras.optimizers.Adam()
@@ -107,15 +106,17 @@ def train_step(inp, targ, hidden):
 #print(example_input_batch, example_target_batch)
 
 steps_per_epoch = config.num_steps
-
+batch_sz = config.batch_size
+nodes = config.units
 
 EPOCHS = 10
 
 for epoch in range(EPOCHS):
     start = time.time()
 
-    hidden = lstm.initialize_hidden_state()
     total_loss = 0
+
+    hidden = np.zeros((batch_sz, nodes))
 
     for (batch, (inp_type, inp_value, targ_type, targ_value)) in enumerate(dataset.take(steps_per_epoch)):
         inp = [inp_type, inp_value]
