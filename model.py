@@ -1,6 +1,7 @@
 import tensorflow as tf
 from config import config
 import numpy as np
+
 import time
 from data_gen import *
 
@@ -42,13 +43,11 @@ class AttentionLSTM(tf.keras.Model):
         type_vec = self.type_emb(inputs[0])
         value_vec = self.value_emb(inputs[1])
         inputs_vec = tf.concat([type_vec, value_vec], axis=2)
-        output, state = self.lstm(inputs_vec, initial_state=hidden)
-        context_vector, attention_weights = self.attention(output, state)
+        output, state_h, state_c = self.lstm(inputs_vec)
+        context_vector, attention_weights = self.attention(output, state_h)
         op_type = self.fct(context_vector)
         op_vec = self.fcv(context_vector)
-        return [op_type, op_vec], state
-
-
+        return [op_type, op_vec], state_h
 
 
 optimizer = tf.keras.optimizers.Adam()
@@ -58,8 +57,11 @@ loss_object = tf.keras.losses.CategoricalCrossentropy(
 
 def loss_function(real, pred):
     mask = tf.math.logical_not(tf.math.equal(real, 0))
+    print(real)
+    real = tf.keras.utils.to_categorical(real, num_classes=pred.get_shape()[2])
+    real = tf.reshape(real, [-1, 49, pred.get_shape()[2]])
+    print(real)
     loss_ = loss_object(real, pred)
-
     mask = tf.cast(mask, dtype=loss_.dtype)
     loss_ *= mask
 
@@ -83,24 +85,25 @@ lstm = AttentionLSTM(vocab_size, config.embedding_dims, config.units, config.bat
 def train_step(inp, targ, hidden):
     loss = 0
 
+    print(targ)
+
     with tf.GradientTape() as tape:
 
         for t in range(1, len(targ[0])):
-            output, hidden = lstm(inp, hidden)
+            [output_t, output_v], hidden = lstm(inp, hidden)
 
-            loss += loss_function(targ[:, t], output)
+            output = [output_t, output_v]
+            print(targ[0].get_shape(), output[0].get_shape())
+            loss += (loss_function(targ[0][:, t], output[0]) + loss_function(targ[1][:, t], output[1])) / 2
+            inp = tf.expand_dims(targ[:, :, t], 2)
 
-            inp = tf.expand_dims(targ[:, t], 1)
+    batch_loss = (loss / int(targ[0].get_shape()[1]))
 
-        batch_loss = (loss / int(targ.shape[1]))
+    variables = lstm.trainable_variables
 
-        variables = lstm.trainable_variables
-
-        gradients = tape.gradient(loss, variables)
-
-        optimizer.apply_gradients(zip(gradients, variables))
-
-        return batch_loss
+    gradients = tape.gradient(loss, variables)
+    optimizer.apply_gradients(zip(gradients, variables))
+    return batch_loss
 
 
 #print(example_input_batch, example_target_batch)
@@ -116,7 +119,7 @@ for epoch in range(EPOCHS):
 
     total_loss = 0
 
-    hidden = np.zeros((batch_sz, nodes))
+    hidden = tf.zeros((batch_sz, nodes))
 
     for (batch, (inp_type, inp_value, targ_type, targ_value)) in enumerate(dataset.take(steps_per_epoch)):
         inp = [inp_type, inp_value]
