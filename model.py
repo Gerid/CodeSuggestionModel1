@@ -19,6 +19,7 @@ class Attention(tf.keras.Model):
         ne = self.v(tf.nn.tanh(wm + wh))
         at = tf.nn.softmax(ne, axis=1)
         ct = mt * at
+        ct = tf.reduce_sum(ct, axis=1)
         return ct, at
 
 
@@ -50,17 +51,17 @@ class AttentionLSTM(tf.keras.Model):
         return [op_type, op_vec], state_h
 
 
-optimizer = tf.keras.optimizers.Adam()
+optimizer = tf.train.AdamOptimizer()
 loss_object = tf.keras.losses.CategoricalCrossentropy(
             from_logits=True, reduction='none')
 
 
 def loss_function(real, pred):
     mask = tf.math.logical_not(tf.math.equal(real, 0))
-    print(real)
-    real = tf.keras.utils.to_categorical(real, num_classes=pred.get_shape()[2])
-    real = tf.reshape(real, [-1, 49, pred.get_shape()[2]])
-    print(real)
+
+    #print(real)
+    real = tf.keras.utils.to_categorical(real, num_classes=pred.get_shape()[1])
+    real = tf.reshape(real, [-1, pred.get_shape()[1]])
     loss_ = loss_object(real, pred)
     mask = tf.cast(mask, dtype=loss_.dtype)
     loss_ *= mask
@@ -72,7 +73,7 @@ type_tensor, type_tokenizer, value_tensor, value_tokenizer, token = load_dataset
 
 vocab_size = {'type': len(type_tokenizer.word_index)+1, 'value': len(value_tokenizer.word_index)+1}
 
-BATCH_SIZE = 20
+BATCH_SIZE = 200
 
 dataset = tf.data.Dataset.from_tensor_slices((type_tensor[:, :-1], value_tensor[:, :-1], type_tensor[:, 1:],
                                               value_tensor[:, 1:]))
@@ -85,17 +86,20 @@ lstm = AttentionLSTM(vocab_size, config.embedding_dims, config.units, config.bat
 def train_step(inp, targ, hidden):
     loss = 0
 
-    print(targ)
+    #print(targ)
 
     with tf.GradientTape() as tape:
 
-        for t in range(1, len(targ[0])):
-            [output_t, output_v], hidden = lstm(inp, hidden)
+        inp = [tf.expand_dims([token[0][0]] * BATCH_SIZE, 1), tf.expand_dims([token[0][1]] * BATCH_SIZE, 1)]
 
+        for t in range(1, targ[0].get_shape()[1]):
+            [output_t, output_v], hidden = lstm(inp, hidden)
             output = [output_t, output_v]
-            print(targ[0].get_shape(), output[0].get_shape())
-            loss += (loss_function(targ[0][:, t], output[0]) + loss_function(targ[1][:, t], output[1])) / 2
-            inp = tf.expand_dims(targ[:, :, t], 2)
+            #print(targ[0].get_shape(), output[0].get_shape())
+            ls1 = loss_function(targ[0][:, t], output[0])
+            ls2 = loss_function(targ[1][:, t], output[1])
+            loss += (ls1 + ls2) / 2
+            inp = [tf.expand_dims(targ[0][:, t], 1), tf.expand_dims(targ[1][:, t], 1)]
 
     batch_loss = (loss / int(targ[0].get_shape()[1]))
 
@@ -113,6 +117,8 @@ batch_sz = config.batch_size
 nodes = config.units
 
 EPOCHS = 10
+
+print(token)
 
 for epoch in range(EPOCHS):
     start = time.time()
@@ -135,7 +141,7 @@ for epoch in range(EPOCHS):
     #if (epoch + 1) % 2 == 0:
     #  checkpoint.save(file_prefix = checkpoint_prefix)
 
-    print('Epoch {} Loss {:.4f}'.format(epoch + 1,
+    ('Epoch {} Loss {:.4f}'.format(epoch + 1,
                                         total_loss / steps_per_epoch))
     print('Time taken for 1 epoch {} sec\n'.format(time.time() - start))
 

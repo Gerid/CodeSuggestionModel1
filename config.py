@@ -9,11 +9,11 @@ class ModelConfig(object):
         self.summary_frequency = 100  # 生成样本的频率
         self.num_steps = 50  # 训练步数
         self.num_nodes = 64  # 隐含层个数
-        self.root_dir = os.path.dirname(os.path.abspath('.')) + "/CodeSuggestionModel2/"
+        self.root_dir = os.path.dirname(os.path.abspath('.')) + "\CodeSuggestionModel2\\"
         self.valuedic_path = self.root_dir + 'value_dic.json'
         self.typedic_path = self.root_dir + 'type_dic.json'
-        self.dataset_path = "/home/fly/下载/py150/python100k_train.json"
-        self.num_examples = 20 #for test
+        self.dataset_path = "F:\edge下载\python50k_eval.json"
+        self.num_examples = 200 #for test
         self.embedding_dims = {"type": 300, "value": 1000}
         self.vocab_size = {'type': 330, 'value': 500}
         self.units = 256

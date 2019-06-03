@@ -42,8 +42,8 @@ def create_dataset(path, num_examples):
     return type_data, value_data
 
 
-def tokenize(data):
-    data_tokenizer = tf.keras.preprocessing.text.Tokenizer(
+def tokenize(data, num_words=None):
+    data_tokenizer = tf.keras.preprocessing.text.Tokenizer(num_words=num_words,
         filters='')
     data_tokenizer.fit_on_texts(data)
 
@@ -64,7 +64,7 @@ def load_dataset(path=config.dataset_path, num_examples=config.num_examples):
     type_data, value_data = create_dataset(path, num_examples)
 
     type_tensor, type_tokenizer, tsoftoken, teoftoken = tokenize(type_data)
-    value_tensor, value_tokenizer, vsoftoken, veoftoken = tokenize(value_data)
+    value_tensor, value_tokenizer, vsoftoken, veoftoken = tokenize(value_data, config.vocab_size['value'])
 
     token=np.zeros((2, 2))
     token[0][0], token[1][0], token[0][1], token[1][1],  = tsoftoken, teoftoken, vsoftoken, veoftoken
