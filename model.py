@@ -63,8 +63,10 @@ def loss_function(real, pred):
     real = tf.keras.utils.to_categorical(real, num_classes=pred.get_shape()[1])
     real = tf.reshape(real, [-1, pred.get_shape()[1]])
     loss_ = loss_object(real, pred)
+    print(loss_)
     mask = tf.cast(mask, dtype=loss_.dtype)
     loss_ *= mask
+
 
     return tf.reduce_mean(loss_)
 
