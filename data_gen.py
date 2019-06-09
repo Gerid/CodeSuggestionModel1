@@ -26,6 +26,10 @@ def create_dataset(path, num_examples):
                         value_data[line_index].append(j['value'])
                         type_data[line_index].append(j['type'])
                         word_count += 1
+                    else:
+                        type_data[line_index].append(j['type'])
+                        value_data[line_index].append('<empty>')
+                        word_count += 1
                     if word_count >= 50:
                         word_count = 0
                         line_index += 1
@@ -64,7 +68,7 @@ def load_dataset(path=config.dataset_path, num_examples=config.num_examples):
     type_data, value_data = create_dataset(path, num_examples)
 
     type_tensor, type_tokenizer, tsoftoken, teoftoken = tokenize(type_data)
-    value_tensor, value_tokenizer, vsoftoken, veoftoken = tokenize(value_data, config.vocab_size['value'])
+    value_tensor, value_tokenizer, vsoftoken, veoftoken = tokenize(value_data, num_words=500)
 
     token=np.zeros((2, 2))
     token[0][0], token[1][0], token[0][1], token[1][1],  = tsoftoken, teoftoken, vsoftoken, veoftoken
@@ -73,11 +77,5 @@ def load_dataset(path=config.dataset_path, num_examples=config.num_examples):
 
 
 #type_tensor, type_tokenizer, value_tensor, value_tokenizer, token = load_dataset()
-#
-#BATCH_SIZE = 20
-#
-#dataset = tf.data.Dataset.from_tensor_slices((type_tensor[:, :-1], value_tensor[:, :-1], type_tensor[:, 1:],
-#                                              value_tensor[:, 1:]))
-#dataset = dataset.batch(BATCH_SIZE, drop_remainder=True)
-#example_input_batch, _, example_target_batch, _ = next(iter(dataset))
-#print(example_input_batch, example_target_batch)
+#vocab_size = {'type': len(type_tokenizer.word_index)+1, 'value': len(value_tokenizer.word_index)+1}
+#print(vocab_size)

@@ -13,10 +13,11 @@ class ModelConfig(object):
         self.valuedic_path = self.root_dir + 'value_dic.json'
         self.typedic_path = self.root_dir + 'type_dic.json'
         self.dataset_path = "F:\edge下载\python50k_eval.json"
-        self.num_examples = 200 #for test
-        self.embedding_dims = {"type": 300, "value": 1000}
-        self.vocab_size = {'type': 330, 'value': 500}
+        self.num_examples = 20000 #for test
+        self.embedding_dims = {"type": 100, "value": 1000}
+        self.vocab_size = {'type': 147, 'value': 1000}
         self.units = 256
+        self.eval_path = "F:\edge下载\python50k_eval.json"
 
 
 config = ModelConfig()

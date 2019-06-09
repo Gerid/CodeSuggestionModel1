@@ -1,9 +1,10 @@
 import tensorflow as tf
 from config import config
 import numpy as np
-
+import os
 import time
 from data_gen import *
+from tensorflow.python.eager import context
 
 class Attention(tf.keras.Model):
     def __init__(self, units):
@@ -63,7 +64,7 @@ def loss_function(real, pred):
     real = tf.keras.utils.to_categorical(real, num_classes=pred.get_shape()[1])
     real = tf.reshape(real, [-1, pred.get_shape()[1]])
     loss_ = loss_object(real, pred)
-    print(loss_)
+    #print(loss_)
     mask = tf.cast(mask, dtype=loss_.dtype)
     loss_ *= mask
 
@@ -74,7 +75,7 @@ def loss_function(real, pred):
 type_tensor, type_tokenizer, value_tensor, value_tokenizer, token = load_dataset()
 
 vocab_size = {'type': len(type_tokenizer.word_index)+1, 'value': len(value_tokenizer.word_index)+1}
-
+print(vocab_size)
 BATCH_SIZE = 200
 
 dataset = tf.data.Dataset.from_tensor_slices((type_tensor[:, :-1], value_tensor[:, :-1], type_tensor[:, 1:],
@@ -114,41 +115,49 @@ def train_step(inp, targ, hidden):
 
 #print(example_input_batch, example_target_batch)
 
-steps_per_epoch = config.num_steps
+steps_per_epoch = 100
 batch_sz = config.batch_size
 nodes = config.units
 
-EPOCHS = 10
+EPOCHS = 4
+checkpoint_dir = './training_checkpoints'
+checkpoint_prefix = os.path.join(checkpoint_dir, "ckpt")
+checkpoint = tf.train.Checkpoint(optimizer=optimizer,
+                                 lstm=lstm)
 
-print(token)
 
-for epoch in range(EPOCHS):
-    start = time.time()
 
-    total_loss = 0
+def train():
+    for epoch in range(EPOCHS):
+        start = time.time()
 
-    hidden = tf.zeros((batch_sz, nodes))
+        total_loss = 0
 
-    for (batch, (inp_type, inp_value, targ_type, targ_value)) in enumerate(dataset.take(steps_per_epoch)):
-        inp = [inp_type, inp_value]
-        targ = [targ_type, targ_value]
-        batch_loss = train_step(inp, targ, hidden)
-        total_loss += batch_loss
+        hidden = tf.zeros((batch_sz, nodes))
 
-        if batch % 100 == 0:
+        for (batch, (inp_type, inp_value, targ_type, targ_value)) in enumerate(dataset.take(steps_per_epoch)):
+            inp = [inp_type, inp_value]
+            targ = [targ_type, targ_value]
+            batch_loss = train_step(inp, targ, hidden)
+            context.context()._clear_caches()
+            total_loss += batch_loss
             print('Epoch {} Batch {} Loss {:.4f}'.format(epoch + 1,
                                                          batch,
                                                          batch_loss.numpy()))
-    # saving (checkpoint) the model every 2 epochs
-    #if (epoch + 1) % 2 == 0:
-    #  checkpoint.save(file_prefix = checkpoint_prefix)
 
-    ('Epoch {} Loss {:.4f}'.format(epoch + 1,
-                                        total_loss / steps_per_epoch))
-    print('Time taken for 1 epoch {} sec\n'.format(time.time() - start))
+            #if batch % 100 == 0:
+                #print('Epoch {} Batch {} Loss {:.4f}'.format(epoch + 1,
+                                                             #batch,
+                                                             #batch_loss.numpy()))
+        # saving (checkpoint) the model every 2 epochs
+        if (epoch + 1) % 2 == 0:
+            checkpoint.save(file_prefix=checkpoint_prefix)
+
+        ('Epoch {} Loss {:.4f}'.format(epoch + 1,
+                                            total_loss / steps_per_epoch))
+        print('Time taken for 1 epoch {} sec\n'.format(time.time() - start))
 
 
-
-
+train()
 
 
