@@ -4,8 +4,10 @@ import numpy as np
 import os
 import time
 from data_gen import *
-from tensorflow.python.eager import context
+#from tensorflow.python.eager import context
 
+
+tf.enable_eager_execution()
 class Attention(tf.keras.Model):
     def __init__(self, units):
         super().__init__()
@@ -139,7 +141,7 @@ def train():
             inp = [inp_type, inp_value]
             targ = [targ_type, targ_value]
             batch_loss = train_step(inp, targ, hidden)
-            context.context()._clear_caches()
+            #context.context()._clear_caches()
             total_loss += batch_loss
             print('Epoch {} Batch {} Loss {:.4f}'.format(epoch + 1,
                                                          batch,

@@ -47,10 +47,11 @@ def create_dataset(path, num_examples):
 
 
 def tokenize(data, num_words=None):
-    data_tokenizer = tf.keras.preprocessing.text.Tokenizer(num_words=num_words,
-        filters='')
+    data_tokenizer = tf.keras.preprocessing.text.Tokenizer(filters='')
     data_tokenizer.fit_on_texts(data)
-
+    if num_words:
+        data_tokenizer.word_index = {e: i for e,i in data_tokenizer.word_index.items() if i < num_words-1}
+        data_tokenizer.word_index[data_tokenizer.oov_token] = num_words
     tensor = data_tokenizer.texts_to_sequences(data)
 
     eoftoken = data_tokenizer.word_index["<end of prog>"]
@@ -68,7 +69,7 @@ def load_dataset(path=config.dataset_path, num_examples=config.num_examples):
     type_data, value_data = create_dataset(path, num_examples)
 
     type_tensor, type_tokenizer, tsoftoken, teoftoken = tokenize(type_data)
-    value_tensor, value_tokenizer, vsoftoken, veoftoken = tokenize(value_data, num_words=500)
+    value_tensor, value_tokenizer, vsoftoken, veoftoken = tokenize(value_data, num_words=config.vocab_size['value'])
 
     token=np.zeros((2, 2))
     token[0][0], token[1][0], token[0][1], token[1][1],  = tsoftoken, teoftoken, vsoftoken, veoftoken
