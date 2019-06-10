@@ -3,6 +3,7 @@ import tensorflow as tf
 from config import config
 import sys
 import numpy as np
+import pickle
 
 tf.enable_eager_execution()
 
@@ -77,6 +78,12 @@ def load_dataset(path=config.dataset_path, num_examples=config.num_examples):
     return type_tensor, type_tokenizer, value_tensor, value_tokenizer, token
 
 
-#type_tensor, type_tokenizer, value_tensor, value_tokenizer, token = load_dataset()
-#vocab_size = {'type': len(type_tokenizer.word_index)+1, 'value': len(value_tokenizer.word_index)+1}
-#print(vocab_size)
+#type_tensor, type_tokenizer, value_tensor, value_tokenizer, token = load_dataset(num_examples=20000)
+##vocab_size = {'type': len(type_tokenizer.word_index)+1, 'value': len(value_tokenizer.word_index)+1}
+#with open('type_vocab.pkl', 'wb') as f:
+#    pickle.dump(type_tokenizer.index_word, f)
+#
+#with open('value_vocab.pkl', 'wb') as f:
+#    pickle.dump(value_tokenizer.index_word, f)
+
+

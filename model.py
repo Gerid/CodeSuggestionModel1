@@ -74,18 +74,18 @@ def loss_function(real, pred):
     return tf.reduce_mean(loss_)
 
 
-type_tensor, type_tokenizer, value_tensor, value_tokenizer, token = load_dataset()
-
-vocab_size = {'type': len(type_tokenizer.word_index)+1, 'value': len(value_tokenizer.word_index)+1}
-print(vocab_size)
-BATCH_SIZE = 200
-
-dataset = tf.data.Dataset.from_tensor_slices((type_tensor[:, :-1], value_tensor[:, :-1], type_tensor[:, 1:],
-                                              value_tensor[:, 1:]))
-dataset = dataset.batch(BATCH_SIZE, drop_remainder=True)
-example_input_batch, _, example_target_batch, _ = next(iter(dataset))
-
-lstm = AttentionLSTM(vocab_size, config.embedding_dims, config.units, config.batch_size)
+#type_tensor, type_tokenizer, value_tensor, value_tokenizer, token = load_dataset()
+#
+#vocab_size = {'type': len(type_tokenizer.word_index)+1, 'value': len(value_tokenizer.word_index)+1}
+#print(vocab_size)
+#BATCH_SIZE = 200
+#
+#dataset = tf.data.Dataset.from_tensor_slices((type_tensor[:, :-1], value_tensor[:, :-1], type_tensor[:, 1:],
+#                                              value_tensor[:, 1:]))
+#dataset = dataset.batch(BATCH_SIZE, drop_remainder=True)
+#example_input_batch, _, example_target_batch, _ = next(iter(dataset))
+#
+lstm = AttentionLSTM(config.vocab_size, config.embedding_dims, config.units, config.batch_size)
 
 
 def train_step(inp, targ, hidden):
@@ -160,6 +160,6 @@ def train():
         print('Time taken for 1 epoch {} sec\n'.format(time.time() - start))
 
 
-train()
+#train()
 
 
