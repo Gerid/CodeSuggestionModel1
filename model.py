@@ -7,7 +7,6 @@ from data_gen import *
 #from tensorflow.python.eager import context
 
 
-tf.enable_eager_execution()
 class Attention(tf.keras.Model):
     def __init__(self, units):
         super().__init__()
@@ -50,13 +49,10 @@ class AttentionLSTM(tf.keras.Model):
         output, state_h, state_c = self.lstm(inputs_vec)
         context_vector, attention_weights = self.attention(output, state_h)
         op_type = self.fct(context_vector)
+        op_type = tf.nn.softmax(op_type, axis=1)
         op_vec = self.fcv(context_vector)
+        op_vec = tf.nn.softmax(op_vec, axis=1)
         return [op_type, op_vec], state_h
-
-
-optimizer = tf.train.AdamOptimizer()
-loss_object = tf.keras.losses.CategoricalCrossentropy(
-            from_logits=True, reduction='none')
 
 
 def loss_function(real, pred):
@@ -69,23 +65,9 @@ def loss_function(real, pred):
     #print(loss_)
     mask = tf.cast(mask, dtype=loss_.dtype)
     loss_ *= mask
+    loss = tf.reduce_mean(loss_)
 
-
-    return tf.reduce_mean(loss_)
-
-
-#type_tensor, type_tokenizer, value_tensor, value_tokenizer, token = load_dataset()
-#
-#vocab_size = {'type': len(type_tokenizer.word_index)+1, 'value': len(value_tokenizer.word_index)+1}
-#print(vocab_size)
-#BATCH_SIZE = 200
-#
-#dataset = tf.data.Dataset.from_tensor_slices((type_tensor[:, :-1], value_tensor[:, :-1], type_tensor[:, 1:],
-#                                              value_tensor[:, 1:]))
-#dataset = dataset.batch(BATCH_SIZE, drop_remainder=True)
-#example_input_batch, _, example_target_batch, _ = next(iter(dataset))
-#
-lstm = AttentionLSTM(config.vocab_size, config.embedding_dims, config.units, config.batch_size)
+    return loss
 
 
 def train_step(inp, targ, hidden):
@@ -116,16 +98,6 @@ def train_step(inp, targ, hidden):
 
 
 #print(example_input_batch, example_target_batch)
-
-steps_per_epoch = 100
-batch_sz = config.batch_size
-nodes = config.units
-
-EPOCHS = 4
-checkpoint_dir = './training_checkpoints'
-checkpoint_prefix = os.path.join(checkpoint_dir, "ckpt")
-checkpoint = tf.train.Checkpoint(optimizer=optimizer,
-                                 lstm=lstm)
 
 
 
@@ -160,6 +132,30 @@ def train():
         print('Time taken for 1 epoch {} sec\n'.format(time.time() - start))
 
 
-#train()
+if __name__ == '__main__':
+    type_tensor, type_tokenizer, value_tensor, value_tokenizer, token = load_dataset()
+    #
+    vocab_size = {'type': len(type_tokenizer.word_index) + 1, 'value': len(value_tokenizer.word_index) + 1}
+    print(vocab_size)
+    BATCH_SIZE = 200
+
+    dataset = tf.data.Dataset.from_tensor_slices((type_tensor[:, :-1], value_tensor[:, :-1], type_tensor[:, 1:],
+                                                  value_tensor[:, 1:]))
+    dataset = dataset.batch(BATCH_SIZE, drop_remainder=True)
+    tf.enable_eager_execution()
+    optimizer = tf.train.AdamOptimizer()
+    loss_object = tf.keras.losses.CategoricalCrossentropy(
+        from_logits=True, reduction='none')
+    lstm = AttentionLSTM(config.vocab_size, config.embedding_dims, config.units, config.batch_size)
+    steps_per_epoch = 100
+    batch_sz = config.batch_size
+    nodes = config.units
+
+    EPOCHS = 10
+    checkpoint_dir = './training_checkpoints'
+    checkpoint_prefix = os.path.join(checkpoint_dir, "ckpt")
+    checkpoint = tf.train.Checkpoint(optimizer=optimizer,
+                                     lstm=lstm)
+    train()
 
 

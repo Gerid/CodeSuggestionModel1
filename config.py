@@ -13,7 +13,7 @@ class ModelConfig(object):
         self.valuedic_path = self.root_dir + 'value_dic.json'
         self.typedic_path = self.root_dir + 'type_dic.json'
         self.dataset_path = "/home/cr/fang/dataset/python50k_eval.json"
-        self.num_examples = 20000 #for test
+        self.num_examples = 50000 #for test
         self.embedding_dims = {"type": 100, "value": 1000}
         self.vocab_size = {'type': 147, 'value': 1000}
         self.units = 256
